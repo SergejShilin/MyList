@@ -1,28 +1,33 @@
-import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class MyArrayList implements Iterable<Object> {
 //public class MyArrayList implements MyList {
-    int size;           //Size of List
-    int capacity;       // Capacity of List
     Object[] elements;  // Init List Empty
+    private int size;   //Size of List
 
     /**
-     * My constructor
+     * My constructor full
      */
-    public MyArrayList(int size, int capacity) {
-        this.size = size;
-        this.capacity = capacity;
+    public MyArrayList(int capacity) {
+        this.size = 0;
         this.elements = new Object[capacity];
+    }
+
+    /**
+     * My constructor default
+     */
+    public MyArrayList() {
+        this.size = 0;
+        this.elements = new Object[10];
     }
 
     /**
      * Added element into end of List
      */
     public void add(Object elem) {
-        if (size == capacity) {
+        if (size == elements.length) {
             grow();
         }
         elements[size] = elem;
@@ -33,15 +38,15 @@ public class MyArrayList implements Iterable<Object> {
      * Added element into index place of List
      */
     public void add(int index, Object elem) {
-        if (index >= capacity) { // Add elem into end or out of List
-            while (index >= capacity) {
+        if (index >= elements.length) { // Add elem into end or out of List
+            while (index >= elements.length) {
                 grow();
             }
             elements[index] = elem;
             size = index + 1;
         }
         else { //Insert elem into List
-            if ((capacity - size) == 1) grow();
+            if ((elements.length - size) == 1) grow();
             int cnt = size - index;
             System.arraycopy(elements, index, elements, index+1, cnt);
             elements[index] = elem;
@@ -53,8 +58,8 @@ public class MyArrayList implements Iterable<Object> {
      * Grows capacity of List
      */
     private void grow() {
-        capacity = (int) (capacity * 1.5);
-        Object[] elements_new = new Object[capacity];
+        int length = (int) (elements.length * 1.5);
+        Object[] elements_new = new Object[length];
         System.arraycopy(elements, 0, elements_new, 0, size);
         elements = elements_new;
     }
@@ -66,12 +71,12 @@ public class MyArrayList implements Iterable<Object> {
         if (index < size) { // Set elem into List
             elements[index] = elem;
         }
-        else if (index < capacity) { // Set elem into End of List but not Out of Capacity
+        else if (index < elements.length) { // Set elem into End of List but not Out of Capacity
             elements[index] = elem;
             size = index + 1;
         }
-        else if (index >= capacity) { // Add elem into End or Out of List
-            while (index >= capacity) {
+        else if (index >= elements.length) { // Add elem into End or Out of List
+            while (index >= elements.length) {
                 grow();
             }
             elements[index] = elem;
@@ -84,16 +89,12 @@ public class MyArrayList implements Iterable<Object> {
      * Remove element from List
      */
     public boolean remove(Object elem) {
-        for (int i=0;  i<size; i++) {
-            if ((elements[i] != null) && (elements[i].equals(elem))) {
-                int cnt = size - i;
-                System.arraycopy(elements, i+1, elements, i, cnt);
-                size--;
-                i--;
-                return true;
-            }
+        int val = indexOf(elem);
+        if (val < 0) return false;
+        else {
+            remove (val);
+            return true;
         }
-        return false;
     }
 
     /**
@@ -101,28 +102,32 @@ public class MyArrayList implements Iterable<Object> {
      */
     public Object remove(int index) {
         if (index < size) { //OK
+            final Object[] old = elements;
+            Object oldVal = (Object) old[index];
             int cnt = size - index;
             System.arraycopy(elements, index+1, elements, index, cnt);
             size--;
-            return 0;
+            return oldVal;
         }
-        else return -1;
+        else throw new IndexOutOfBoundsException();
     }
 
     /**
      * Clear List
      */
     public void clear() {
-        for (int i=0; i<size; i++) elements[i] = null;
+        Object[] elements_clr = new Object[10];
+        elements = elements_clr;
         size = 0;
-        capacity = 10;
     }
 
     /**
      * Get element by index from List
      */
     public Object get(int index) {
-        if (index < size) { return elements[index]; }
+        if (index < size) {
+            return elements[index];
+        }
         throw new IndexOutOfBoundsException();
     }
 
@@ -130,9 +135,18 @@ public class MyArrayList implements Iterable<Object> {
      * Return index of element in List
      */
     public int indexOf(Object elem) {
-        for (int i=0;  i<size; i++) {
-            if ((elements[i] != null) && (elements[i].equals(elem))) {
-                return i;
+        if (elem != null) {
+            for (int i=0;  i<size; i++) {
+                if (elem.equals(elements[i])) {
+                    return i;
+                }
+            }
+        }
+        else { // elem == null
+            for (int i=0; i<size; i++) {
+                if (elements[i] == null) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -142,14 +156,9 @@ public class MyArrayList implements Iterable<Object> {
      * Check present of element in List
      */
     public boolean contains(Object elem) {
-        if (elem != null) {
-            for (int i=0;  i<size; i++) {
-                if ((elements[i] != null) && (elements[i].equals(elem))) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        int i = indexOf(elem);
+        if (i < 0)  return false;
+        else        return true;
     }
 
     /**
@@ -158,7 +167,6 @@ public class MyArrayList implements Iterable<Object> {
     public int size() {
         return size;
     }
-
 
     /**
      * For internal testing 
@@ -171,7 +179,7 @@ public class MyArrayList implements Iterable<Object> {
 
     public static void main(String[] args) {
         // test init
-        MyArrayList lstIt = new MyArrayList(0, 10);
+        MyArrayList lstIt = new MyArrayList();
 
         System.out.println("Test #0 : MyArrayList#Iterator.hasNext(Object)");
         Iterator<Object> it0 = lstIt.iterator();
@@ -221,7 +229,7 @@ public class MyArrayList implements Iterable<Object> {
         // should be '1, 3, 5, 7..17, 19, null, ... null'
 
         // NEW MyArrayList
-        MyArrayList lst = new MyArrayList(0, 10);
+        MyArrayList lst = new MyArrayList();
         System.out.println("Test #1 : Created NEW MyArrayList#add(Object)");
         for (int i = 0; i < 20; i++) {
             lst.add(i);
@@ -260,23 +268,26 @@ public class MyArrayList implements Iterable<Object> {
         // and a visible size of 42 because index #41 was the last element that we added to the list
 
 
-        System.out.println("Test #5 : MyArrayList#remove(Object) (multiple elements)");
+        System.out.println("Test #5 : MyArrayList#remove(Object) (remove 1 element)");
         lst.remove("500");
         ((MyArrayList) lst).printAll();
         System.out.println("Size is " + lst.size());
         System.out.println("");
         // should print [0..9, 42, 30..33, 11..19, null..null]
-        // visible size should be 40 because we removed 2 elements
+        // visible size should be 41 because we removed 1 elements
 
-        System.out.println("Test #6 : MyArrayList#remove(Object) (do nothing if not found)");
+        System.out.println("Test #6 : MyArrayList#remove(Object) (remove 1 element)");
         lst.remove("500");
         ((MyArrayList) lst).printAll();
+        System.out.println("Size is " + lst.size());
         System.out.println("");
         // should print [0..9, 30..33, 11..19, null..null] 
+        // visible size should be 40 because we removed 1 elements
 
 
-        System.out.println("Test #7 : MyArrayList#remove(int) (by index)");
-        lst.remove(10);
+        System.out.println("Test #7 : MyArrayList#remove(int) (remove 1 element by index)");
+        Object r = lst.remove(10);
+        System.out.println("Removed element #10: " + r.toString());
         ((MyArrayList) lst).printAll();
         System.out.println("Size is " + lst.size());
         System.out.println("");
@@ -367,6 +378,5 @@ public class MyArrayList implements Iterable<Object> {
                 throw new ConcurrentModificationException();
             }
         }
-
     }
 }
